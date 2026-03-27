@@ -66,3 +66,27 @@ cd ../natone-deploy
 
 docker compose up -d --build
 ```
+
+## 5) One-command deploy
+Use the script:
+
+```
+./deploy.sh
+```
+
+You can override the root path if needed:
+
+```
+ROOT_DIR=/opt/natone ./deploy.sh
+```
+
+## Local helper script
+The `tools/natlog` script provides quick SSH, deploy, logs, and status commands.
+
+Examples:
+
+```
+./tools/natlog
+./tools/natlog --deploy
+./tools/natlog --logs backend
+```

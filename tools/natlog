@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="root@72.56.232.199"
+KEY_PATH=".ssh/key"
+ROOT_DIR="/opt/natone"
+DEPLOY_DIR="$ROOT_DIR/natone-deploy"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  ./natlog                 # SSH into server
+  ./natlog --deploy         # git pull + docker compose up -d --build
+  ./natlog --status         # docker compose ps
+  ./natlog --logs <service> # tail logs (nginx|backend|frontend|db|certbot)
+  ./natlog --restart        # docker compose restart
+  ./natlog --pull           # git pull in all repos (deploy, backend, frontend)
+  ./natlog --down           # docker compose down
+USAGE
+}
+
+ssh_run() {
+  local cmd="$1"
+  ssh -i "$KEY_PATH" "$HOST" "$cmd"
+}
+
+case "${1:-}" in
+  "")
+    echo "Подключаемся к natone $HOST"
+    ssh -ti "$KEY_PATH" "$HOST" "cd $ROOT_DIR && exec bash -l"
+    ;;
+  --deploy)
+    echo "Запускаю деплой на $HOST"
+    ssh_run "cd $DEPLOY_DIR && ./deploy.sh"
+    ;;
+  --status)
+    ssh_run "cd $DEPLOY_DIR && docker compose ps"
+    ;;
+  --logs)
+    if [[ -z "${2:-}" ]]; then
+      echo "Укажи сервис для логов" >&2
+      usage
+      exit 1
+    fi
+    ssh_run "cd $DEPLOY_DIR && docker compose logs --tail=200 $2"
+    ;;
+  --restart)
+    ssh_run "cd $DEPLOY_DIR && docker compose restart"
+    ;;
+  --pull)
+    ssh_run "cd $ROOT_DIR/natone-deploy && git pull --ff-only"
+    ssh_run "cd $ROOT_DIR/natone-backend && git pull --ff-only"
+    ssh_run "cd $ROOT_DIR/natone-nuxt && git pull --ff-only"
+    ;;
+  --down)
+    ssh_run "cd $DEPLOY_DIR && docker compose down"
+    ;;
+  -h|--help)
+    usage
+    ;;
+  *)
+    echo "Неизвестный флаг: $1" >&2
+    usage
+    exit 1
+    ;;
+esac
