@@ -90,3 +90,23 @@ Examples:
 ./tools/natlog --deploy
 ./tools/natlog --logs backend
 ```
+
+## Backups
+Create a gzip-compressed Postgres dump and keep 14 days by default.
+
+Run manually:
+
+```
+./tools/backup.sh
+```
+
+Env overrides:
+- `ROOT_DIR` (default `/opt/natone`)
+- `BACKUP_DIR` (default `/opt/natone/backups`)
+- `RETENTION_DAYS` (default `14`)
+
+Example cron (daily at 03:30):
+
+```
+30 3 * * * /opt/natone/natone-deploy/tools/backup.sh >> /opt/natone/backups/backup.log 2>&1
+```
