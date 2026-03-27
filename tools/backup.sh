@@ -6,6 +6,20 @@ DEPLOY_DIR="$ROOT_DIR/natone-deploy"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 
+latest_file() {
+  ls -1t "$BACKUP_DIR"/natone_*.sql.gz 2>/dev/null | head -n 1
+}
+
+if [[ "${1:-}" == "--latest" ]]; then
+  file="$(latest_file || true)"
+  if [[ -z "${file:-}" ]]; then
+    echo "No backups found in $BACKUP_DIR" >&2
+    exit 1
+  fi
+  echo "$file"
+  exit 0
+fi
+
 mkdir -p "$BACKUP_DIR"
 
 if [[ ! -f "$DEPLOY_DIR/.env" ]]; then

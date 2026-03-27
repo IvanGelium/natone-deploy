@@ -100,6 +100,12 @@ Run manually:
 ./tools/backup.sh
 ```
 
+Get latest backup path (useful for download):
+
+```
+./tools/backup.sh --latest
+```
+
 Env overrides:
 - `ROOT_DIR` (default `/opt/natone`)
 - `BACKUP_DIR` (default `/opt/natone/backups`)
@@ -109,4 +115,30 @@ Example cron (daily at 03:30):
 
 ```
 30 3 * * * /opt/natone/natone-deploy/tools/backup.sh >> /opt/natone/backups/backup.log 2>&1
+```
+
+Download latest backup from local machine:
+
+```
+./tools/natlog --fetch-backup .
+```
+
+## Restore latest backup to local DB (macOS)
+This will download the latest backup from the VPS and restore it to your local Postgres.
+
+```
+./tools/restore_local.sh
+```
+
+Env overrides (optional):
+- `LOCAL_BACKUP_DIR` (default `/tmp/natone-backups`)
+- `LOCAL_DB_NAME` (default `natone`)
+- `LOCAL_DB_USER` (default `natone`)
+- `LOCAL_DB_HOST` (default `localhost`)
+- `LOCAL_DB_PORT` (default `5432`)
+
+Example:
+
+```
+LOCAL_DB_USER=leonid LOCAL_DB_NAME=natone ./tools/restore_local.sh
 ```
