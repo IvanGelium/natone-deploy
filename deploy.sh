@@ -30,4 +30,17 @@ echo "==> Rebuilding and starting containers"
 cd "$DEPLOY_DIR"
 docker compose up -d --build
 
+echo "==> Restarting nginx to refresh upstream DNS"
+docker compose restart nginx
+
+echo "==> Health check"
+for i in {1..10}; do
+  if curl -fsS http://localhost/ >/dev/null && curl -fsS http://localhost/api/health >/dev/null; then
+    echo "==> OK"
+    break
+  fi
+  echo "==> Waiting for services... ($i/10)"
+  sleep 2
+done
+
 echo "==> Done"
