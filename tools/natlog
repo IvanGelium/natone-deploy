@@ -35,9 +35,10 @@ start_deploy_bg() {
   local remote_cmd="
 set -e
 cd '$DEPLOY_DIR'
-LOG_FILE='/opt/natone/deploy-${run_id}.log'
-STATUS_FILE='/opt/natone/deploy-${run_id}.status'
-PID_FILE='/opt/natone/deploy-${run_id}.pid'
+mkdir -p '.deploy-runs'
+LOG_FILE='$DEPLOY_DIR/.deploy-runs/deploy-${run_id}.log'
+STATUS_FILE='$DEPLOY_DIR/.deploy-runs/deploy-${run_id}.status'
+PID_FILE='$DEPLOY_DIR/.deploy-runs/deploy-${run_id}.pid'
 nohup bash -lc \"./deploy.sh >\\\"\$LOG_FILE\\\" 2>&1; echo \\\$? >\\\"\$STATUS_FILE\\\"\" >/dev/null 2>&1 &
 echo \$! >\"\$PID_FILE\"
 echo \"RUN_ID=${run_id}\"
@@ -51,8 +52,8 @@ echo \"PID_FILE=\$PID_FILE\"
 
 wait_deploy_result() {
   local run_id="$1"
-  local status_file="/opt/natone/deploy-${run_id}.status"
-  local log_file="/opt/natone/deploy-${run_id}.log"
+  local status_file="$DEPLOY_DIR/.deploy-runs/deploy-${run_id}.status"
+  local log_file="$DEPLOY_DIR/.deploy-runs/deploy-${run_id}.log"
 
   echo "Ожидаю завершение деплоя RUN_ID=$run_id"
   while true; do

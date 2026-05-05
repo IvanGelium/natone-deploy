@@ -36,7 +36,8 @@ docker compose restart nginx
 echo "==> Health check"
 ok=0
 for i in {1..10}; do
-  if curl -fsS http://localhost/ >/dev/null && curl -fsS http://localhost/api/health >/dev/null; then
+  if docker compose exec -T nginx wget -qO- http://frontend:3000/ >/dev/null \
+    && docker compose exec -T nginx wget -qO- http://backend:3000/health >/dev/null; then
     echo "==> OK"
     ok=1
     break
