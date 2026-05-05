@@ -18,6 +18,7 @@ services:
     environment:
       - NITRO_HOST=0.0.0.0
       - NITRO_PORT=3000
+      - API_BASE_URL=http://backend:3000
     expose:
       - "3000"
 

@@ -17,6 +17,7 @@ Usage:
   ./natlog --status         # docker compose ps
   ./natlog --logs <service> # tail logs (nginx|backend|frontend|db|certbot)
   ./natlog --fetch-backup [dest] # download latest backup to dest (default .)
+  ./natlog --migrate        # run prisma migrate deploy in backend container
   ./natlog --restart        # docker compose restart
   ./natlog --pull           # git pull in all repos (deploy, backend, frontend)
   ./natlog --down           # docker compose down
@@ -57,6 +58,9 @@ case "${1:-}" in
     remote_file="$(ssh -i "$KEY_PATH" "$HOST" "ROOT_DIR=$ROOT_DIR $DEPLOY_DIR/tools/backup.sh --latest")"
     echo "Скачиваю $remote_file -> $dest"
     scp -i "$KEY_PATH" "$HOST:$remote_file" "$dest"
+    ;;
+  --migrate)
+    ssh_run "cd $DEPLOY_DIR && docker compose exec backend npx prisma migrate deploy"
     ;;
   --restart)
     ssh_run "cd $DEPLOY_DIR && docker compose restart"

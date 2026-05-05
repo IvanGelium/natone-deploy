@@ -123,6 +123,13 @@ Download latest backup from local machine:
 ./tools/natlog --fetch-backup .
 ```
 
+## Manual migrations
+Run migrations on the server:
+
+```
+./tools/natlog --migrate
+```
+
 ## Restore latest backup to local DB (macOS)
 This will download the latest backup from the VPS and restore it to your local Postgres.
 
