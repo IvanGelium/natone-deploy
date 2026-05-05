@@ -28,6 +28,9 @@ services:
     environment:
       - PORT=3000
       - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
     expose:
       - "3000"
     depends_on:
