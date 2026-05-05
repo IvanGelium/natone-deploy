@@ -13,7 +13,7 @@ usage() {
 Usage:
   ./natlog                 # SSH into server
   ./natlog --root           # SSH into server as root
-  ./natlog --deploy         # git pull + docker compose up -d --build
+  ./natlog --deploy         # start deploy in background and wait for result
   ./natlog --status         # docker compose ps
   ./natlog --logs <service> # tail logs (nginx|backend|frontend|db|certbot)
   ./natlog --fetch-backup [dest] # download latest backup to dest (default .)
@@ -29,6 +29,54 @@ ssh_run() {
   ssh -i "$KEY_PATH" "$HOST" "$cmd"
 }
 
+start_deploy_bg() {
+  local run_id
+  run_id="$(date +%Y%m%d-%H%M%S)"
+  local remote_cmd="
+set -e
+cd '$DEPLOY_DIR'
+LOG_FILE='/opt/natone/deploy-${run_id}.log'
+STATUS_FILE='/opt/natone/deploy-${run_id}.status'
+PID_FILE='/opt/natone/deploy-${run_id}.pid'
+nohup bash -lc \"./deploy.sh >\\\"\$LOG_FILE\\\" 2>&1; echo \\\$? >\\\"\$STATUS_FILE\\\"\" >/dev/null 2>&1 &
+echo \$! >\"\$PID_FILE\"
+echo \"RUN_ID=${run_id}\"
+echo \"LOG_FILE=\$LOG_FILE\"
+echo \"STATUS_FILE=\$STATUS_FILE\"
+echo \"PID_FILE=\$PID_FILE\"
+"
+
+  ssh_run "$remote_cmd"
+}
+
+wait_deploy_result() {
+  local run_id="$1"
+  local status_file="/opt/natone/deploy-${run_id}.status"
+  local log_file="/opt/natone/deploy-${run_id}.log"
+
+  echo "Ожидаю завершение деплоя RUN_ID=$run_id"
+  while true; do
+    if result="$(ssh_run "if [ -f '$status_file' ]; then cat '$status_file'; fi" 2>/dev/null)"; then
+      if [[ -n "$result" ]]; then
+        echo
+        echo "=== Последние логи деплоя ==="
+        ssh_run "tail -n 120 '$log_file'" || true
+        if [[ "$result" == "0" ]]; then
+          echo "Деплой завершился успешно."
+          return 0
+        fi
+        echo "Деплой завершился с ошибкой (exit $result)." >&2
+        return 1
+      fi
+      printf "."
+    else
+      echo
+      echo "SSH временно недоступен, продолжаю ждать..."
+    fi
+    sleep 5
+  done
+}
+
 case "${1:-}" in
   "")
     echo "Подключаемся к natone $HOST"
@@ -40,7 +88,14 @@ case "${1:-}" in
     ;;
   --deploy)
     echo "Запускаю деплой на $HOST"
-    ssh_run "cd $DEPLOY_DIR && ./deploy.sh"
+    deploy_info="$(start_deploy_bg)"
+    echo "$deploy_info"
+    run_id="$(echo "$deploy_info" | awk -F= '/^RUN_ID=/{print $2}')"
+    if [[ -z "$run_id" ]]; then
+      echo "Не удалось получить RUN_ID деплоя" >&2
+      exit 1
+    fi
+    wait_deploy_result "$run_id"
     ;;
   --status)
     ssh_run "cd $DEPLOY_DIR && docker compose ps"
